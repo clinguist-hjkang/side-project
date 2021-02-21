@@ -8,17 +8,21 @@ driver = webdriver.Chrome(executable_path=chrome_driver_path)
 
 pattern = re.compile(r'\s+')
 
-columns = ['title', 'content', 'ratings', 'writen_date', 'experienced_date']
-df = pd.DataFrame(columns=columns)
+title_lst, content_txt_lst, ratings_lst, writen_date_lst, experienced_date_lst = ([] for i in range(5))
 
-for i in range(0, 290):
+URL = "https://www.tripadvisor.com/Attraction_Review-g187147-d2323543-Reviews-Paris_Metro-Paris_Ile_de_France.html#REVIEWS"
+driver.get(URL)
+tourist_spot = driver.find_element_by_xpath('//*[@id="HEADING"]').text
+LAST_PAGE = driver.find_element_by_xpath('//*[@id="component_19"]/div[3]/div/div[8]/div/div/a[6]').text
+today_date = pd.to_datetime('today').strftime('%y%m%d')
+
+for i in range(0, int(LAST_PAGE)):
     PAGE = i * 5
 
     URL = "https://www.tripadvisor.com/Attraction_Review-g187147-d2323543-Reviews-or" + str(
         PAGE) + "-Paris_Metro-Paris_Ile_de_France.html#REVIEWS"
 
     driver.get(URL)
-    title_lst, content_txt_lst, ratings_lst, writen_date_lst, experienced_date_lst = ([] for i in range(5))
 
     titles = driver.find_elements_by_css_selector(".glasR4aX a")
     for title in titles:
@@ -51,15 +55,10 @@ for i in range(0, 290):
         experienced_date = str(month_number) + "-" + year
         experienced_date_lst.append(experienced_date)
 
-    df_to_add = pd.DataFrame(
-        {'title': title_lst, 'content': content_txt_lst, 'ratings': ratings_lst, 'writen_date': writen_date_lst,
-         'experienced_date': experienced_date_lst})
-    df = pd.concat([df, df_to_add])
-
-    i += 1
-
-df = df.reset_index(drop=True)
-df.to_csv('/Users/admin/Github/side-project/tourist-spot/collect-data/210220_paris-metro.csv', index=False)
+df = pd.DataFrame(list(zip(title_lst, content_txt_lst, ratings_lst, writen_date_lst, experienced_date_lst)), columns =['title', 'content', 'ratings', 'writen_date', 'experienced_date'])
+filename = today_date + "_" + tourist_spot+".csv"
+filename = filename.lower().replace(" ", "-")
+df.to_csv(filename, index=False)
 
 driver.close()
 driver.quit()
